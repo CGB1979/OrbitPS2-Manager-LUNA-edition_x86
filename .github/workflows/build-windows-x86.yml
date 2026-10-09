@@ -1,0 +1,54 @@
+name: Build Windows x86 (32-bit)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "angular/**"
+      - "src/**"
+      - "scripts/**"
+      - "assets/**"
+      - ".github/workflows/build-windows-x86.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-x86:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            angular/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install Angular dependencies
+        working-directory: angular
+        run: npm ci
+
+      - name: Build Windows x86 installer and ZIP
+        run: npm run package:win
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrbitPS2-Manager-LUNA-Windows-x86
+          path: build/*
+          if-no-files-found: error
+          retention-days: 14
